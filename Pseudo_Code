@@ -1,0 +1,42 @@
+int angle; //initialize actual angle of US sensor
+int angle1; //initialize returned angle of US sensor
+
+void ultraSonic() { // code comes from Rui Santos;
+//http://randomnerdtutorials.com/complete-guide-for-ultrasonic-sensor-hc-sr04/
+  digitalWrite(trigPin, LOW);
+  delay(5);
+  digitalWrite(trigPin, HIGH);
+  delay(10);
+  digitalWrite(trigPin, LOW); // send sound out
+  long duration = pulseIn(echoPin, HIGH);
+  long cm = (duration/2) / 29.1; 
+  return cm;
+};
+
+
+
+void setup() {
+  // put your setup code here, to run once:
+  pinMode(trigPin, OUTPUT); //ultrasonic stuff
+  pinMode(echoPin, INPUT); //ultrasonic stuff
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+long distance = 0;
+
+while (distancefromwall >= ###) {
+  while (angle <= 180) { //test 18 angles, choose the optimal one
+    rotate 10 degrees;
+    ultraSonic();
+    if (cm >= distance) {
+      cm = distance;
+      angle = angle1;
+    } else {
+    };
+    return angle1;
+  }
+  go in direction angle1;
+}
+
+}
