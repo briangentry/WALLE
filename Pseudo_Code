@@ -24,8 +24,11 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
 long distance = 0;
-
+long distancefromwall = 400;
 while (distancefromwall >= ###) {
+  distancefromwall = ultraSonic();
+}
+if (distancefromwall < ###) {
   while (angle <= 180) { //test 18 angles, choose the optimal one
     rotate 10 degrees;
     ultraSonic();
