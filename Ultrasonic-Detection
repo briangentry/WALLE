@@ -1,0 +1,47 @@
+int angle1; //initialize returned angle of US sensor
+long distance = 0; //initialize distance from wall for rotating
+long distancefromwall = 400; //initialize distance from wall for basic moving
+
+void ultraSonic() { // code comes from Rui Santos;
+//http://randomnerdtutorials.com/complete-guide-for-ultrasonic-sensor-hc-sr04/
+  digitalWrite(trigPin, LOW);
+  delay(5);
+  digitalWrite(trigPin, HIGH);
+  delay(10);
+  digitalWrite(trigPin, LOW); // send sound out
+  long duration = pulseIn(echoPin, HIGH);
+  long cm = (duration/2) / 29.1; 
+  return cm;
+};
+
+void rotate() {
+  
+}
+
+
+
+void setup() {
+  // put your setup code here, to run once:
+  pinMode(trigPin, OUTPUT); //ultrasonic stuff
+  pinMode(echoPin, INPUT); //ultrasonic stuff
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+while (distancefromwall >= 10) { //as long as it's at least 10 cm away keep going
+  distancefromwall = ultraSonic();
+}
+if (distancefromwall < 10) {
+  int angle = 0;
+  long oldDistance = 0; 
+  while (oldDistance < distance) {
+    oldDistance = distance;
+    rotate();
+    angle = angle + 10;
+    distance = ultraSonic();
+    angle1 = angle;
+  }
+  go in direction angle1;
+}
+
+}
