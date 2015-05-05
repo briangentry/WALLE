@@ -1,0 +1,31 @@
+void moveDoor(int dir) {
+  dir makes it open or close
+}
+
+void wallE() {
+  
+}
+
+int speakerPin = ###;
+int armPin = ###;
+int doorPin = ###;
+
+
+void setup() {
+  // put your setup code here, to run once:
+  pinMode(speakerPin, OUTPUT);
+  pinMode(armPin, OUTPUT);
+  pinMode(doorPin, OUTPUT);
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  if (there is a can) {
+    moveDoor(1);
+    use arms;
+    moveDoor(-1);
+    compress can;
+    wallE();
+    
+  }
+}
