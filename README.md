@@ -1,3 +1,0 @@
-# WALLE
-# WALLE
-# WALLE
