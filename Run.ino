@@ -11,18 +11,22 @@ int i = 0; //used for storing angles to array
 float courses[100];
 float reversecourses[100];
 
-int trigPin = 4; 
-int echoPin = 5; //ultrasonic sensor pins
-int rotatingPin1 = 6; //ultrasonic rotation
-int dir1Pin = 13; //direction of left motor; opposite of dir2Pin if forward
-int motor1Pin = 11; //left
-int dir2Pin = 12; //direction of right motor
-int motor2Pin = 3;//right
-int rxspeakjet = ###;
-int txspeakjet = ###;
+//1, 2, 9, 10
+//7 & 8 determine if movement mortor used, or ultrasonic motor
+//byte trigPin = 4; 
+byte echoPin = 5; //ultrasonic sensor pins
+byte rotatingPin1 = 6; //ultrasonic rotation
+byte dir1Pin = 13; //direction of left motor; opposite of dir2Pin if forward
+byte motor1Pin = 11; //left
+byte dir2Pin = 12; //direction of right motor
+byte motor2Pin = 3;//right
+byte rxspeakjet = ###;
+byte txspeakjet = ###;
+byte rxgps = ###;
+byte txgps = ###;
 
 TinyGPS gps;
-SoftwareSerial serialgps(2,3); //not actual pins; used for transmission of data
+SoftwareSerial serialgps(txgps, rxgps); //not actual pins; used for transmission of data
 SoftwareSerial speakjetserial(rxspeakjet, txspeakjet);
 
 char finished[] = {186, 129, 141, 129, 8, 189, 191, 255};
