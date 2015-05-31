@@ -150,6 +150,7 @@ void drive(){
     int j = 0;
     while (j < 6){
       avg += ultraSonic();
+      j++;
     }
     distanceToWall = avg / 6;
   }
