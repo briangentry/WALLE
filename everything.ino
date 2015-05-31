@@ -57,12 +57,12 @@ void rotate(float time){
 float newPath(){
   speakjetserial.print(calculating);
   digitalWrite(12, LOW);
-  rotate(20.0);
+  rotate(24.0);
   digitalWrite(12, HIGH);
   distance = 0;
   float pause = 7.0, u;
   int nAngle;
-  for (int i = -90; i <= 90; i += 30){
+  for (int i = -90; i < 90; i += 30){
     u = ultraSonic();
     if (distance < u){
       nAngle = i;
@@ -70,13 +70,17 @@ float newPath(){
     }
     pause = 7.5 + (i / 25.0);
     if (i > 0){
-      pause += 2;
+      pause += 1.5;
     }
     rotate(pause);
     delay(90);
   }
+  if (distance < ultraSonic()){
+    nAngle = 90;
+    distance = ultraSonic();
+  }
   digitalWrite(12, LOW);
-  rotate(20.0);
+  rotate(23.0);
   return nAngle;
 }
 
@@ -130,26 +134,27 @@ void turn(int angle){
     l(true);
     k = 0 - k;
   }
-  delay(k*20);
+  delay(k*15);
   s();
 }
 
 void drive(){
-  distanceToWall = 1000;
-  r(true);
-  l(true);
-  while(distanceToWall > 20 || distanceToWall == 0 || distanceToWall == 6){
+  distanceToWall = ultraSonic();
+  while(distanceToWall > 20){
     distanceToWall = ultraSonic();
-    delay(300);
+    r(true);
+    l(true);
+    delay(2000);
+    s();
+    int avg = 0;
+    int j = 0;
+    while (j < 6){
+      avg += ultraSonic();
+    }
+    distanceToWall = avg / 6;
   }
   s();
-  int chosenAngle = newPath();
-  if (distance < 20){
-    turn(180);
-    chosenAngle = newPath();
-  } else {
-    turn(chosenAngle);
-  }
+  turn(newPath());
   delay(50);
 }
 
