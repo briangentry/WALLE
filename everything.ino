@@ -1,25 +1,11 @@
-#include <SoftwareSerial.h> 
+#include <SoftwareSerial.h>
 #include <TinyGPS.h>
-//#include <math.h>
 
 TinyGPS gps;
-SoftwareSerial serialgps(6,10); 
-SoftwareSerial speakjetserial(9,5);
+SoftwareSerial serialgps(6,10);
+SoftwareSerial speakjetserial(5,9);
 
-byte trigPin = 4; 
-//byte echoPin = 5; //ultrasonic sensor pins
-byte dir1Pin = 13; //direction of left motor; opposite of dir2Pin if forward
-byte motor1Pin = 11; //left
-byte dir2Pin = 12; //direction of right motor
-byte motor2Pin = 3;//right
-byte rxspeakjet = 9;
-byte txspeakjet = 5;
-
-unsigned char finished[] = {186, 129, 141, 129, 8, 189, 191, 255};
-char calculating[] = {194, 8, 132, 159, 194, 158, 139, 145, 8, 130, 192, 128, 143, 255};
-
-int globaL = 0;
-int Satellites = 0;
+int Satellites, globaL = 0;
 float latitude, longitude;
 float courseLats[100];
 float courseLong[100];
@@ -29,54 +15,23 @@ float oldlat, oldlong, newlat, newlong, courseway;
 unsigned long chars;
 unsigned short sentences, failed_checksum;
 
-void GPSAll(){
-  Satellites = 0;
-  while(Satellites < 1 || Satellites == 255){
-    while(serialgps.available()){
-      int c = serialgps.read(); 
-      if(gps.encode(c)){
-        gps.f_get_position(&latitude, &longitude);
-        Satellites = gps.satellites();
-        gps.stats(&chars, &sentences, &failed_checksum);
-      }
-    }
-  }
-}
-/*
-void readcourse() {
-  int i;
-  GPSlatlong();
-  newlat = latitude;
-  newlong = longitude;
-  float deltalat = newlat - oldlat;
-  float deltalong = newlong - oldlong;
-  if (deltalat >= 0 && deltalong >= 0) {
-    courseway = 180 / 3.1416 * atan (deltalong/deltalat);
-  } else if (deltalat >= 0 && deltalong < 0) {
-    courseway = 270 - 180 / 3.1416 * atan(deltalat/deltalong);
-  } else if (deltalat < 0 && deltalong >= 0) {
-    courseway = 90 - 180 / 3.1416 * atan(deltalat / deltalong);
-  } else if (deltalat < 0 && deltalong < 0) {
-    courseway = 180 + 180 / 3.1416 * atan(deltalat/deltalong);
-  }
-  oldlat = newlat;
-  oldlong = newlong;
-  courses[i] = courseway;
-  i++;
-}
+char finished[] = {186, 129, 141, 129, 8, 189, 191, 255};
+char calculating[] = {194, 8, 132, 159, 194, 158, 139, 145, 8, 130, 192, 128, 143, 255};
 
-// for different sensor
-long ultraSonic(){
-  digitalWrite(trigPin, LOW);
-  delay(5);
-  digitalWrite(trigPin, HIGH);
-  delay(10);
-  digitalWrite(trigPin, LOW); // send sound out
-  long duration = pulseIn(echoPin, HIGH);
-  long cm = (duration/2) / 29.1; 
-  return cm;
-}*/
 
+void setup(){
+  pinMode(4, OUTPUT);
+  pinMode(13, OUTPUT);
+  pinMode(12, OUTPUT);
+  pinMode(11, OUTPUT);
+  pinMode(3, OUTPUT);
+  pinMode(7, OUTPUT);
+  pinMode(8, OUTPUT);
+  Serial.begin(115200);
+  speakjetserial.begin(9600);
+  serialgps.begin(4800);
+  Serial.println("Start");
+}
 
 long ultraSonic(){
   pinMode(4, OUTPUT);
@@ -101,9 +56,9 @@ void rotate(float time){
 }
 
 float newPath(){
+  speakjetserial.print(calculating);
   digitalWrite(12, LOW);
   rotate(37.0);
-  //speakjetserial(finished); not working
   digitalWrite(12, HIGH);
   float distance = 0, pause = 7.0, u;
   int nAngle;
@@ -128,16 +83,6 @@ float newPath(){
   return nAngle;
 }
 
-/*void convert() {
-  for (int j = 0; j < 100; j++) {
-    if (courses[j] <= 180) {
-      reversecourses[j] = courses[j] + 180;
-    } else {
-      reversecourses[j] = 360 - courses[j];
-    }
-  }
-}
-*/
 void l(boolean f){
   digitalWrite(8, LOW);
   digitalWrite(9, LOW);
@@ -159,15 +104,15 @@ void l(boolean f){
 void r(boolean f){
   digitalWrite(8, LOW);
   digitalWrite(9, LOW);
-  byte s;
+  byte sr;
   if (f){
     digitalWrite(13, LOW);
-    s = 255;
+    sr = 255;
   } else {
     digitalWrite(13, HIGH);
-    s = 100;
+    sr = 100;
   }
-  for(byte x = 0; x < s; x++){
+  for(byte x = 0; x < sr; x++){
     analogWrite(11, x);
   }
 }
@@ -196,30 +141,35 @@ void drive(){
   int dist = ultraSonic();
   r(true);
   l(true);
-  while(dist > 30){
+  while(dist > 20){
     dist = ultraSonic();
+    delay(10);
   }
   s();
   turn(newPath());
   delay(1000);
 }
 
-void setup() {
-  // put your setup code here, to run once:
-  pinMode(trigPin, OUTPUT); //ultrasonic stuff
-  //pinMode(echoPin, INPUT); //ultrasonic stuff
-  pinMode(13, OUTPUT);
-  pinMode(12, OUTPUT);
-  pinMode(11, OUTPUT);
-  pinMode(3, OUTPUT);
-  pinMode(7, OUTPUT);
-  pinMode(8, OUTPUT);
-  serialgps.begin(4800);
-  speakjetserial.begin(9600);
+void GPSAll(){
+  Satellites = 0;
+  while(Satellites < 1 || Satellites == 255){
+    while(!serialgps.available()){}
+    while(serialgps.available()){
+      int c = serialgps.read(); 
+      if(gps.encode(c)){
+        gps.f_get_position(&latitude, &longitude);
+        Satellites = gps.satellites();
+        gps.stats(&chars, &sentences, &failed_checksum);
+      }
+    }
+  }
 }
 
-void loop() {
-  // put your main code here, to run repeatedly;
-  drive();
+void loop(){
   GPSAll();
+  courseLats[globaL] = latitude;
+  courseLong[globaL] = longitude;
+  globaL ++;
+  drive();
+  delay(2000);
 }
