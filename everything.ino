@@ -5,7 +5,8 @@ TinyGPS gps;
 SoftwareSerial serialgps(6,10);
 SoftwareSerial speakjetserial(5,9);
 
-int Satellites, globaL = 0, distanceToWall = 1000;
+int Satellites, globaL = 0;
+float distance = 0, distanceToWall = 1000;
 float latitude, longitude;
 float courseLats[100];
 float courseLong[100];
@@ -17,7 +18,6 @@ unsigned short sentences, failed_checksum;
 
 char finished[] = {186, 129, 141, 129, 8, 189, 191, 255};
 char calculating[] = {194, 8, 132, 159, 194, 158, 139, 145, 8, 130, 192, 128, 143, 255};
-
 
 void setup(){
   pinMode(4, OUTPUT);
@@ -59,9 +59,10 @@ float newPath(){
   digitalWrite(12, LOW);
   rotate(20.0);
   digitalWrite(12, HIGH);
-  float distance = 0, pause = 7.0, u;
+  distance = 0;
+  float pause = 7.0, u;
   int nAngle;
-  for (int i = -90; i < 90; i += 30){
+  for (int i = -90; i <= 90; i += 30){
     u = ultraSonic();
     if (distance < u){
       nAngle = i;
@@ -69,13 +70,13 @@ float newPath(){
     }
     pause = 7.5 + (i / 25.0);
     if (i > 0){
-      pause += 2.5;
+      pause += 2;
     }
     rotate(pause);
     delay(90);
   }
   digitalWrite(12, LOW);
-  rotate(18.0);
+  rotate(20.0);
   return nAngle;
 }
 
@@ -142,7 +143,13 @@ void drive(){
     delay(300);
   }
   s();
-  turn(newPath());
+  int chosenAngle = newPath();
+  if (distance < 20){
+    turn(180);
+    chosenAngle = newPath();
+  } else {
+    turn(chosenAngle);
+  }
   delay(50);
 }
 
@@ -162,11 +169,10 @@ void GPSAll(){
 }
 
 void loop(){
-  /*GPSAll();
+  GPSAll();
   courseLats[globaL] = latitude;
   courseLong[globaL] = longitude;
   globaL ++;
   drive();
   delay(2000);
-  */
 }
