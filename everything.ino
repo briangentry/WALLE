@@ -5,7 +5,7 @@ TinyGPS gps;
 SoftwareSerial serialgps(6,10);
 SoftwareSerial speakjetserial(5,9);
 
-int Satellites, globaL = 0;
+int Satellites, globaL = 0, distanceToWall = 1000;
 float latitude, longitude;
 float courseLats[100];
 float courseLong[100];
@@ -30,7 +30,6 @@ void setup(){
   Serial.begin(115200);
   speakjetserial.begin(9600);
   serialgps.begin(4800);
-  Serial.println("Start");
 }
 
 long ultraSonic(){
@@ -58,7 +57,7 @@ void rotate(float time){
 float newPath(){
   speakjetserial.print(calculating);
   digitalWrite(12, LOW);
-  rotate(37.0);
+  rotate(20.0);
   digitalWrite(12, HIGH);
   float distance = 0, pause = 7.0, u;
   int nAngle;
@@ -68,18 +67,15 @@ float newPath(){
       nAngle = i;
       distance = u;
     }
-    pause = 8.5 + (i / 60.0);
-    if (pause == 9){
-      pause = 9.5;
-    } else if (pause == 9.5){
-      pause = 11.5;
-    } else if (pause == 10){
-      pause = 13;
+    pause = 7.5 + (i / 25.0);
+    if (i > 0){
+      pause += 2.5;
     }
     rotate(pause);
+    delay(90);
   }
   digitalWrite(12, LOW);
-  rotate(22.0);
+  rotate(18.0);
   return nAngle;
 }
 
@@ -91,7 +87,7 @@ void l(boolean f){
   byte sl;
   if (f){
     digitalWrite(12, LOW);
-    sl = 70;
+    sl = 110;
   } else {
     digitalWrite(12, HIGH);
     sl = 130;
@@ -110,7 +106,7 @@ void r(boolean f){
     sr = 255;
   } else {
     digitalWrite(13, HIGH);
-    sr = 100;
+    sr = 120;
   }
   for(byte x = 0; x < sr; x++){
     analogWrite(11, x);
@@ -133,21 +129,21 @@ void turn(int angle){
     l(true);
     k = 0 - k;
   }
-  delay(k*12);
+  delay(k*20);
   s();
 }
 
 void drive(){
-  int dist = ultraSonic();
+  distanceToWall = 1000;
   r(true);
   l(true);
-  while(dist > 20){
-    dist = ultraSonic();
-    delay(10);
+  while(distanceToWall > 20 || distanceToWall == 0 || distanceToWall == 6){
+    distanceToWall = ultraSonic();
+    delay(300);
   }
   s();
   turn(newPath());
-  delay(1000);
+  delay(50);
 }
 
 void GPSAll(){
@@ -166,10 +162,11 @@ void GPSAll(){
 }
 
 void loop(){
-  GPSAll();
+  /*GPSAll();
   courseLats[globaL] = latitude;
   courseLong[globaL] = longitude;
   globaL ++;
   drive();
   delay(2000);
+  */
 }
