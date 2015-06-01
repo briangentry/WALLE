@@ -144,7 +144,6 @@ void drive(){
     distanceToWall = ultraSonic();
     r(true);
     l(true);
-    delay(2000);
     s();
     int avg = 0;
     int j = 0;
