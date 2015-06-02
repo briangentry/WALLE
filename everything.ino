@@ -6,7 +6,7 @@ SoftwareSerial serialgps(6,10);
 SoftwareSerial speakjetserial(5,9);
 
 int Satellites, globaL = 0;
-float distance = 0, distanceToWall = 1000;
+float distance = 0, distanceToWall;
 float latitude, longitude;
 float courseLats[100];
 float courseLong[100];
@@ -21,6 +21,7 @@ char calculating[] = {194, 8, 132, 159, 194, 158, 139, 145, 8, 130, 192, 128, 14
 
 void setup(){
   pinMode(4, OUTPUT);
+  pinMode(2, INPUT);
   pinMode(13, OUTPUT);
   pinMode(12, OUTPUT);
   pinMode(11, OUTPUT);
@@ -33,15 +34,12 @@ void setup(){
 }
 
 long ultraSonic(){
-  pinMode(4, OUTPUT);
   digitalWrite(4, LOW);
-  delayMicroseconds(2);
-  digitalWrite(4, HIGH);
   delayMicroseconds(5);
+  digitalWrite(4, HIGH);
+  delayMicroseconds(10);
   digitalWrite(4, LOW);
-  pinMode(4, INPUT);
-  float ret = pulseIn(4, HIGH);
-  return (ret / 2) / 29.1;
+  return (pulseIn(2, HIGH, 1100) / 2) / 29.1;
 }
 
 void rotate(float time){
@@ -51,7 +49,7 @@ void rotate(float time){
   delay(time);
   analogWrite(3, 0);
   digitalWrite(8, LOW);
-  delay(1000);
+  delay(100);
 }
 
 float newPath(){
@@ -80,7 +78,7 @@ float newPath(){
     distance = ultraSonic();
   }
   digitalWrite(12, LOW);
-  rotate(23.0);
+  rotate(18.0);
   return nAngle;
 }
 
@@ -134,24 +132,16 @@ void turn(int angle){
     l(true);
     k = 0 - k;
   }
-  delay(k*15);
+  delay(k*10);
   s();
 }
 
 void drive(){
-  distanceToWall = ultraSonic();
-  while(distanceToWall > 20){
-    distanceToWall = ultraSonic();
-    r(true);
-    l(true);
-    s();
-    int avg = 0;
-    int j = 0;
-    while (j < 6){
-      avg += ultraSonic();
-      j++;
-    }
-    distanceToWall = avg / 6;
+  short dist = 0;
+  r(true);
+  l(true);
+  while(dist == 0 || dist == 6){
+    dist = ultraSonic();
   }
   s();
   turn(newPath());
@@ -174,10 +164,10 @@ void GPSAll(){
 }
 
 void loop(){
-  GPSAll();
+  /*GPSAll();
   courseLats[globaL] = latitude;
   courseLong[globaL] = longitude;
-  globaL ++;
+  globaL ++;*/
   drive();
-  delay(2000);
+  delay(300);
 }
