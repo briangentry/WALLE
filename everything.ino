@@ -1,7 +1,9 @@
 #include <SoftwareSerial.h>
 #include <TinyGPS.h>
+#include <Ultrasonic.h>
 
 TinyGPS gps;
+Ultrasonic ultra(4, 2);
 SoftwareSerial serialgps(6,10);
 SoftwareSerial speakjetserial(5,9);
 
@@ -33,13 +35,66 @@ void setup(){
   serialgps.begin(4800);
 }
 
-long ultraSonic(){
-  digitalWrite(4, LOW);
-  delayMicroseconds(5);
-  digitalWrite(4, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(4, LOW);
-  return (pulseIn(2, HIGH, 1100) / 2) / 29.1;
+void forward(){
+  digitalWrite(7, HIGH);
+  digitalWrite(8, LOW);
+  digitalWrite(13, LOW); // direction right
+  digitalWrite(12, LOW); // direction left
+  analogWrite(3, 85); // motor left
+  analogWrite(11, 255); // motor rigth
+}
+
+void backward(){
+  digitalWrite(7, HIGH);
+  digitalWrite(8, LOW);
+  digitalWrite(13, HIGH); // direction right
+  digitalWrite(12, HIGH); // direction left
+  analogWrite(3, 85); // motor left
+  analogWrite(11, 255); // motor rigth
+}
+
+void right(int angle){
+  digitalWrite(7, HIGH);
+  digitalWrite(8, LOW);
+  digitalWrite(13, HIGH); // direction right
+  digitalWrite(12, LOW); // direction left
+  analogWrite(3, 130); // motor left
+  analogWrite(11, 255); // motor rigth
+  delay(angle*7.5);
+  stopp();
+}
+
+void left(int angle){
+  digitalWrite(7, HIGH);
+  digitalWrite(8, LOW);
+  digitalWrite(13, LOW); // direction right
+  digitalWrite(12, HIGH); // direction left
+  analogWrite(3, 130); // motor left
+  analogWrite(11, 255); // motor rigth
+  delay(angle*10.4);
+  stopp();
+}
+
+void stopp(){
+  digitalWrite(7, LOW);
+  analogWrite(11, 0);
+  analogWrite(3, 0);
+}
+
+void drive(){
+  forward();
+  while(ultraSonic() > 25){}
+  stopp();
+  delay(100);
+  backward();
+  delay(250);
+  stopp();
+  int dir = newPath();
+  if (dir > 0){
+    left(dir);
+  } else {
+    right(-1 * dir);
+  }
 }
 
 void rotate(float time){
@@ -54,23 +109,22 @@ void rotate(float time){
 
 float newPath(){
   speakjetserial.print(calculating);
+  delay(500);
   digitalWrite(12, LOW);
-  rotate(24.0);
+  rotate(45.0);
   digitalWrite(12, HIGH);
-  distance = 0;
-  float pause = 7.0, u;
+  int distance = 0;
+  float pause, u;
   int nAngle;
+  delay(1000);
+  short pauses[] = {5, 6, 8, 10, 14, 24};
   for (int i = -90; i < 90; i += 30){
     u = ultraSonic();
     if (distance < u){
       nAngle = i;
       distance = u;
     }
-    pause = 7.5 + (i / 25.0);
-    if (i > 0){
-      pause += 1.5;
-    }
-    rotate(pause);
+    rotate(pauses[(i+90)/30]);
     delay(90);
   }
   if (distance < ultraSonic()){
@@ -78,74 +132,12 @@ float newPath(){
     distance = ultraSonic();
   }
   digitalWrite(12, LOW);
-  rotate(18.0);
+  rotate(17.0);
   return nAngle;
 }
 
-void l(boolean f){
-  digitalWrite(8, LOW);
-  digitalWrite(9, LOW);
-  digitalWrite(8, LOW);
-  digitalWrite(7, HIGH);
-  byte sl;
-  if (f){
-    digitalWrite(12, LOW);
-    sl = 110;
-  } else {
-    digitalWrite(12, HIGH);
-    sl = 130;
-  }
-  for(short x = 0; x < sl; x++){
-    analogWrite(3, x);
-  }
-}
-
-void r(boolean f){
-  digitalWrite(8, LOW);
-  digitalWrite(9, LOW);
-  byte sr;
-  if (f){
-    digitalWrite(13, LOW);
-    sr = 255;
-  } else {
-    digitalWrite(13, HIGH);
-    sr = 120;
-  }
-  for(byte x = 0; x < sr; x++){
-    analogWrite(11, x);
-  }
-}
-
-void s(){
-  digitalWrite(7, LOW);
-  analogWrite(11, 0);
-  analogWrite(3, 0);
-}
-
-void turn(int angle){
-  int k = angle;
-  if (k > 0){
-    r(true);
-    l(false);
-  } else {
-    r(false);
-    l(true);
-    k = 0 - k;
-  }
-  delay(k*10);
-  s();
-}
-
-void drive(){
-  short dist = 0;
-  r(true);
-  l(true);
-  while(dist == 0 || dist == 6){
-    dist = ultraSonic();
-  }
-  s();
-  turn(newPath());
-  delay(50);
+float ultraSonic(){
+  return ultra.Timing() / 29.1 / 2;
 }
 
 void GPSAll(){
@@ -164,10 +156,11 @@ void GPSAll(){
 }
 
 void loop(){
-  /*GPSAll();
+  GPSAll();
   courseLats[globaL] = latitude;
   courseLong[globaL] = longitude;
-  globaL ++;*/
+  globaL ++;
+  delay(200);
   drive();
   delay(300);
 }
