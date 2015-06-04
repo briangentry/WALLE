@@ -1,6 +1,84 @@
+/*
+  either needs to be fixed
+  or copied and pasted part 
+  by part into a working GPS 
+  file...
+*/
+
 #include <Ultrasonic.h>
+#include <SoftwareSerial.h> 
+#include <TinyGPS.h>
+#include <math.h>
 
 Ultrasonic ultra(4, 2);
+
+TinyGPS gps;
+SoftwareSerial serialgps(6,10); 
+SoftwareSerial speakjetserial(5,9);
+
+char finished[] = {186, 129, 141, 129, 8, 189, 191, 255};
+char calculating[] = {194, 8, 132, 159, 194, 158, 139, 145, 8, 130, 192, 128, 143, 255};
+char hello[] = {20, 96, 21, 114, 22, 88, 23, 5, 183, 7, 159, 146, 164, 255};
+
+int globaL = 0;
+int Satellites = 0;
+float latitude, longitude;
+float courseLats[100];
+float courseLong[100];
+float reversecourses[100];
+float oldlat, oldlong, newlat, newlong, courseway;
+
+unsigned long chars;
+unsigned short sentences, failed_checksum;
+
+void setup() {
+  // put your setup code here, to run once:
+  // 0, 1 Unused
+  // 2 Ultrasonic output
+  pinMode(3, OUTPUT); // 3 left motor speed
+  pinMode(4, OUTPUT); // 4 Ultrasonic return
+  // 5 designated speakjet input
+  // 6 gps output
+  pinMode(7, OUTPUT); // 7 left motor on
+  pinMode(8, OUTPUT); // 8 front motor on
+  // 9 speakjet serial output
+  // 10 gps return
+  pinMode(11, OUTPUT); // 11 left motor speed
+  pinMode(12, OUTPUT); // 12 right motor direction
+  pinMode(13, OUTPUT); // 13 left motor direction
+  Serial.begin(115200);
+  serialgps.begin(4800);
+  speakjetserial.begin(9600);
+}
+
+void GPSAll(){
+  Satellites = 0;
+  while(Satellites < 1 || Satellites == 255){
+    while(!serialgps.available()){}
+    while(serialgps.available()){
+      int c = serialgps.read(); 
+      if(gps.encode(c)){
+        gps.f_get_position(&latitude, &longitude);
+        Satellites = gps.satellites();
+        gps.stats(&chars, &sentences, &failed_checksum);
+      }
+    }
+  }
+}
+
+void ReTrace(){
+  // needs to store the last set of coordinates
+  // or access them in some way
+  // 
+  // then take the current lat / long
+  // use the difference to figure out the current orientation
+  // 
+  // turn a certain amount to drive toward the next lat / long pair
+  // 
+  // drive a certain amount of time????
+  // or just drive and check GPS until close - then what happens if it misses? 
+  // drive a certain amount of time.
+}
 
 long ultraSonic(){
   byte x = 0;
@@ -66,17 +144,6 @@ void stopp(){
   analogWrite(3, 0);
 }
 
-void setup() {
-  // put your setup code here, to run once:
-  pinMode(8, OUTPUT);
-  pinMode(7, OUTPUT);
-  pinMode(13, OUTPUT);
-  pinMode(3, OUTPUT);
-  pinMode(11, OUTPUT);
-  pinMode(12, OUTPUT);
-  Serial.begin(115200);
-}
-
 void drive(){
   forward();
   while(ultraSonic() > 20){}
@@ -121,11 +188,7 @@ float newPath(){
       distance = u;
     }
     rotate(pauses[(i+90)/30]);
-    delay(2000);
-    Serial.print(u);
-    Serial.print("cm, ");
-    Serial.print(i);
-    Serial.println(" degrees ");
+    delay(1000);
   }
   if (distance < ultraSonic()){
     nAngle = 90;
