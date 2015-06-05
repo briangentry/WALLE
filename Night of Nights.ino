@@ -7,30 +7,29 @@
 #include <TinyGPS.h>
 #include <math.h>
 
+TinyGPS gps;
+SoftwareSerial serialgps(6,10);
+SoftwareSerial speakjetserial(5,9);
+
 Ultrasonic ultra(4, 2);
 
-TinyGPS gps;
-SoftwareSerial serialgps(6,10); 
-SoftwareSerial speakjetserial(5,9);
+int Satellites = 0, gL;
+float latitude = 0, longitude = 0;
+float oldlat, oldlong, newlat, newlong, courseway;
+boolean usingGPS = 1;
+
+float courses[5];
+float reversedcourses[5];
+int times[5];
 
 char finished[] = {186, 129, 141, 129, 8, 189, 191, 255};
 char calculating[] = {194, 8, 132, 159, 194, 158, 139, 145, 8, 130, 192, 128, 143, 255};
 char hello[] = {20, 96, 21, 114, 22, 88, 23, 5, 183, 7, 159, 146, 164, 255};
 
-int gL = 0;
-int Satellites = 0;
-float latitude, longitude;
-float oldlat, oldlong, newlat, newlong, courseway;
-boolean usingGPS;
-float courses[5];
-float reversedcourses[5];
-int k = 0;
-int times[5];
-
 unsigned long chars;
 unsigned short sentences, failed_checksum;
 
-void setup() {
+void setup(){
   // put your setup code here, to run once:
   // 0, 1 Unused
   // 2 Ultrasonic output
@@ -51,19 +50,74 @@ void setup() {
   usingGPS = GPSTest();
 }
 
-void GPSAll() {
+void GPSAll(){
   Satellites = 0;
-  while (Satellites == 0){
+  while(Satellites < 1 || Satellites == 255){
     while(!serialgps.available()){}
-    while(serialgps.available()) {
+    while(serialgps.available()){
       int c = serialgps.read(); 
-      if(gps.encode(c)) {
+      if(gps.encode(c)){
         gps.f_get_position(&latitude, &longitude);
         Satellites = gps.satellites();
         gps.stats(&chars, &sentences, &failed_checksum);
       }
     }
   }
+}
+
+boolean GPSTest(){
+  int o = 0;
+  while (o < 100){
+    if (serialgps.available()){
+      return true;
+    } else {
+      o++;
+    }
+  }
+  return false;
+}
+
+
+float avgLat(){
+  int f = 0;
+  float ret = 0;
+  while (f < 5){
+    delay(20);
+    GPSAll();
+    ret = ret + latitude;
+    f ++;
+  }
+  return ret / f;
+}
+
+float avgLong(){
+  int w;
+  float ret = 0;
+  while (w < 5){
+    delay(20);
+    GPSAll();
+    ret += (longitude, 10);
+    w ++;
+  }
+  return ret / w;
+}
+
+long ultraSonic(){
+  byte x = 0;
+  float in, ret, l = 0;
+  while(x < 6){
+    in = ultra.timing()/58.2;
+    if(in < 500){
+      ret += in;
+      l ++;
+    }
+    x ++;
+    delay(1);
+  }
+  if (l == 0){
+    l = 1;
+  }
+  return (ret / l);
 }
 
 void readcourse() {
@@ -94,51 +148,6 @@ void convertarray() {
       reversedcourses[-i + 5] = courses[i] - 180;
     }
   }
-}
-
-boolean GPSTest(){
-  int o = 0;
-  while (o < 100){
-    if (serialgps.available()){
-      return true;
-    } else {
-      o++;
-    }
-  }
-  return false;
-}
-
-void ReTrace(){
-  
-  // needs to store the last set of coordinates
-  // or access them in some way
-  // 
-  // then take the current lat / long
-  // use the difference to figure out the current orientation
-  // 
-  // turn a certain amount to drive toward the next lat / long pair
-  // 
-  // drive a certain amount of time????
-  // or just drive and check GPS until close - then what happens if it misses? 
-  // drive a certain amount of time.
-}
-
-long ultraSonic(){
-  byte x = 0;
-  float in, ret, l = 0;
-  while(x < 6){
-    in = ultra.timing()/58.2;
-    if(in < 500){
-      ret += in;
-      l ++;
-    }
-    x ++;
-    delay(1);
-  }
-  if (l == 0){
-    l = 1;
-  }
-  return (ret / l);
 }
 
 void forward(){
@@ -187,7 +196,7 @@ void stopp(){
   analogWrite(3, 0);
 }
 
-void drive(){
+int drive(){
   forward();
   int init = millis();
   while(ultraSonic() > 20){}
@@ -204,7 +213,7 @@ void drive(){
   } else {
     right(-1 * dir);
   }
-  return ret;
+  return init;
 }
 
 void timeDrive(int time){
@@ -264,11 +273,11 @@ void GPSDrive(){
   gL = 0;
   convertarray();
   while (gL < 5){
-    turn = cD - reversedcourses[gL];
+    int turn = cD - reversedcourses[gL];
     if (turn > 180){
-      left(turn);
+      right(turn - 180);
     } else {
-      right(turn);
+      left(turn);
     }
     timeDrive(times[5 - gL]);
     cD = courses[gL];
@@ -276,36 +285,17 @@ void GPSDrive(){
   }
 }
 
-float avgLat(){
-  int f;
-  float ret = 0;
-  while (f < 5){
-    delay(20);
-    GPSAll();
-    ret += (latitude, 10);
-    f ++;
-  }
-  return ret / f;
-}
-
-float avgLong(){
-  int w;
-  float ret = 0;
-  while (w < 5){
-    delay(20);
-    GPSAll();
-    ret += (longitude, 10);
-    w ++;
-  }
-  return ret / w;
-}
-
 void loop(){
-  if (usingGPS){
+  GPSAll();
+  Serial.println(latitude);
+  Serial.println(avgLat());
+  /*if (usingGPS){
     oldlat = avgLat();
     oldlong = avgLong();
     GPSDrive();
-  }/* else {
-    drive();
+  } else {
+    while(true){
+      drive();
+    }
   }*/
 }
