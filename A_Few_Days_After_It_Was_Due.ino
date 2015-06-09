@@ -113,7 +113,7 @@ long ultraSonic(){
   float in, ret = 0;
   byte l = 0;
   while(l < 5){
-    in = ultra.ping()/US_ROUNDTRIP_CM;
+    in = ultra.ping()/58.2;
     if (in == 0) {
       in = 400;
     }
@@ -128,30 +128,30 @@ long ultraSonic(){
 }
 
 float distComp(){
-  float rett = 0;
-  Serial.println();
+  float rett = 0, b = -1, s = -1;
   for (int r = 0; r < 5; r ++){
-    Serial.println(distances[r]);
-    boolean biggest = 1;
-    boolean smallest = 1;
+    byte biggest = 0, smallest = 0;
     for (int w = 0; w < 5; w ++){
-      Serial.print(distances[r]);
-      Serial.print(" : ");
-      Serial.println(distances[w]);
-      if (distances[r] > distances[w]){
-        smallest = false;
-      } else if (distances[r] < distances[w]){
-        biggest = false;
+      if (distances[r] >= distances[w]){
+        biggest ++;
+      }
+      if (distances[r] <= distances[w]){
+        smallest ++;
       }
     }
-    if (biggest || smallest){
-    } else {
-      rett += distances[r];
-      Serial.print("    ");
-      Serial.println(distances[r]);
+    if (biggest == 5){
+      b = r;
+    }
+    if (smallest == 5){
+      s = r;
     }
   }
-  return (rett / 3);
+  for (byte q = 0; q < 5; q++){
+    if (q != s && q != b){
+      rett += distances[q];
+    }
+  }
+  return(rett / 3);
 }
 
 void readcourse() {
@@ -182,22 +182,6 @@ void convertarray() {
       reversedcourses[-i + 5] = courses[i] - 180;
     }
   }
-}
-
-
-void ReTrace(){
-  
-  // needs to store the last set of coordinates
-  // or access them in some way
-  // 
-  // then take the current lat / long
-  // use the difference to figure out the current orientation
-  // 
-  // turn a certain amount to drive toward the next lat / long pair
-  // 
-  // drive a certain amount of time????
-  // or just drive and check GPS until close - then what happens if it misses? 
-  // drive a certain amount of time.
 }
 
 void forward(){
@@ -249,7 +233,7 @@ void stopp(){
 int drive(){
   int init = millis();
   forward();
-  while(ultraSonic() > 35){
+  while(ultraSonic() > 20){
     delay(10);
   }
   init = millis() - init;
@@ -352,5 +336,4 @@ void loop(){
     }
   }*/
   ultraSonic();
-  delay(1000);
 }
