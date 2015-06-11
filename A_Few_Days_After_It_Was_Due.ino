@@ -1,7 +1,9 @@
+include <Adafruit_TCS34725.h>
 #include <NewPing.h>
 #include <SoftwareSerial.h>
 #include <TinyGPS.h>
 #include <math.h>
+#include <Wire.h>
 
 
 
@@ -16,11 +18,11 @@ float latitude = 0, longitude = 0;
 float oldlat, oldlong, newlat, newlong, courseway;
 boolean usingGPS = 1;
 
-float distances[5];
+float distances[50];
 
-float courses[5];
-float reversedcourses[5];
-int times[5];
+float courses[50];
+float reversedcourses[50];
+int times[50];
 
 char finished[] = {186, 129, 141, 129, 8, 189, 191, 255};
 char calculating[] = {194, 8, 132, 159, 194, 158, 139, 145, 8, 130, 192, 128, 143, 255};
@@ -174,14 +176,42 @@ void readcourse() {
   gL++;
 }
 
-void convertarray() {
-  for (int i = 5; i > 0; i--) {
-    if(courses[i] <= 180) {
-      reversedcourses[-i + 5] = courses[i] + 180;
+void trimarray() {
+  int ret;
+  for (int i = 0; i < 50; i++) {
+    if(reversedcourses[i] = 0) {
     } else {
-      reversedcourses[-i + 5] = courses[i] - 180;
+      ret = i - 1;
+      break;
     }
   }
+  float *p = &reversedcourses[ret];
+}
+
+void convertarray() {
+  for (int i = 50; i > 0; i--) {
+    if(courses[i] <= 180) {
+      reversedcourses[-i + 50] = courses[i] + 180;
+    } else {
+      reversedcourses[-i + 50] = courses[i] - 180;
+    }
+  }
+}
+
+
+void ReTrace(){
+  
+  // needs to store the last set of coordinates
+  // or access them in some way
+  // 
+  // then take the current lat / long
+  // use the difference to figure out the current orientation
+  // 
+  // turn a certain amount to drive toward the next lat / long pair
+  // 
+  // drive a certain amount of time????
+  // or just drive and check GPS until close - then what happens if it misses? 
+  // drive a certain amount of time.
 }
 
 void forward(){
@@ -209,7 +239,7 @@ void right(int angle){
   digitalWrite(12, LOW); // direction left
   analogWrite(3, 130); // motor left
   analogWrite(11, 255); // motor right
-  delay(angle*7.5);
+  delay(angle*8.4);
   stopp();
 }
 
@@ -271,29 +301,29 @@ void rotate(float time){
 float newPath(){
   speakjetserial.print(calculating);
   digitalWrite(12, LOW);
-  rotate(33.0);
+  rotate(38.0);
   digitalWrite(12, HIGH);
   long distance = 0;
   float pause;
   long u;
   int nAngle;
   delay(1000);
-  short pauses[] = {5, 7, 8, 10, 11, 14};
-  for (int i = -90; i < 90; i += 30){
+  for (int i = -90; i < 90; i += 180){
     u = ultraSonic();
     if (distance < u){
       nAngle = i;
       distance = u;
     }
-    rotate(pauses[(i+90)/30]);
+    rotate(75);
     delay(1000);
   }
   if (distance < ultraSonic()){
     nAngle = 90;
     distance = ultraSonic();
   }
+  
   digitalWrite(12, LOW);
-  rotate(23.0);
+  rotate(25.0);
   return nAngle;
 }
 
@@ -335,5 +365,5 @@ void loop(){
       drive();
     }
   }*/
-  ultraSonic();
+  drive();
 }
