@@ -1,10 +1,9 @@
-#include <Adafruit_TCS34725.h>
+//#include <Adafruit_TCS34725.h>
 #include <NewPing.h>
 #include <SoftwareSerial.h>
 #include <TinyGPS.h>
 #include <math.h>
-#include <Wire.h>
-
+//#include <Wire.h>
 
 
 TinyGPS gps;
@@ -111,7 +110,19 @@ float avgLong(){
   return ret / w;
 }
 
-long ultraSonic(){
+float uS(int t){
+  unsigned long beg = millis();
+  float in = ultra.ping()/58.2;
+  while(in == 0 && millis() < beg + t){
+    in = ultra.ping()/58.2;
+  }
+  if (in == 0){
+    in = 400;
+  }
+  return in;
+}
+
+float ultraSonic(){
   float in, ret = 0;
   byte l = 0;
   while(l < 5){
@@ -119,14 +130,16 @@ long ultraSonic(){
     if (in == 0) {
       in = 400;
     }
-    distances[l] = in;
+    Serial.println(in);
+    //distances[l] = in;
     l ++;
     delay(1);
   }
+  /*
   ret = distComp();
   Serial.print("  ");
   Serial.println(ret);
-  return ret;
+  return ret;*/
 }
 
 float distComp(){
@@ -198,22 +211,6 @@ void convertarray() {
   }
 }
 
-
-void ReTrace(){
-  
-  // needs to store the last set of coordinates
-  // or access them in some way
-  // 
-  // then take the current lat / long
-  // use the difference to figure out the current orientation
-  // 
-  // turn a certain amount to drive toward the next lat / long pair
-  // 
-  // drive a certain amount of time????
-  // or just drive and check GPS until close - then what happens if it misses? 
-  // drive a certain amount of time.
-}
-
 void forward(){
   digitalWrite(7, HIGH);
   digitalWrite(8, LOW);
@@ -261,17 +258,22 @@ void stopp(){
 }
 
 int drive(){
-  int init = millis();
-  forward();
-  while(ultraSonic() > 20){
-    delay(10);
-  }
-  init = millis() - init;
-  stopp();
   delay(100);
-  backward();
-  delay(250);
-  stopp();
+  if(uS(1000) > 30){
+    int init = millis();
+    forward();
+    while(uS(500) > 20){
+      delay(10);
+    }
+    init = millis() - init;
+    stopp();
+    delay(200);
+    backward();
+    delay(250);
+    stopp();
+  } else {
+    init = 0;
+  }
   int dir = newPath();
   if (dir > 0){
     left(dir);
@@ -301,7 +303,7 @@ void rotate(float time){
 float newPath(){
   speakjetserial.print(calculating);
   digitalWrite(12, LOW);
-  rotate(38.0);
+  rotate(36.0);
   digitalWrite(12, HIGH);
   long distance = 0;
   float pause;
@@ -309,21 +311,22 @@ float newPath(){
   int nAngle;
   delay(1000);
   for (int i = -90; i < 90; i += 180){
-    u = ultraSonic();
+    u = uS(1000);
     if (distance < u){
       nAngle = i;
       distance = u;
     }
-    rotate(75);
+    rotate(80);
     delay(1000);
   }
-  if (distance < ultraSonic()){
+  u = uS(1000);
+  if (distance < u){
     nAngle = 90;
-    distance = ultraSonic();
+    distance = u;
   }
   
   digitalWrite(12, LOW);
-  rotate(25.0);
+  rotate(23.0);
   return nAngle;
 }
 
@@ -354,8 +357,8 @@ void GPSDrive(){
 }
 
 void loop(){
-  /*speakjetserial.print(hello);
-  usingGPS = 0;
+  speakjetserial.print(hello);
+  usingGPS = 0; // get rid of this line, if gps is to be used
   if (usingGPS){
     oldlat = avgLat();
     oldlong = avgLong();
@@ -364,6 +367,5 @@ void loop(){
     while(true){
       drive();
     }
-  }*/
-  drive();
+  }
 }
